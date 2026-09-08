@@ -1,0 +1,25 @@
+{
+  "name": "human-as-a-service",
+  "version": "1.0.0",
+  "description": "🕊️ Human-as-a-Service (真·人工大模型) - OpenAI 兼容接口，手机通过 Telegram 或专属网页工作台接收并回复",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "openai-compatible",
+    "fake-gpt",
+    "human-in-the-loop",
+    "telegram-bot",
+    "zeabur"
+  ],
+  "author": "caojian126",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "telegraf": "^4.16.3"
+  }
+}
