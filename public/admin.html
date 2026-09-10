@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>gugu-bot 专属工作台</title>
+  <title>专属工作台</title>
   <style>
     :root {
       --primary: #6366f1;
@@ -220,7 +220,7 @@
     }
 
     .room-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-    
+
     .msg-group { display: flex; flex-direction: column; max-width: 85%; }
     .msg-group.user { align-self: flex-start; }
     .msg-group.assistant { align-self: flex-end; }
@@ -252,7 +252,7 @@
     .input-box:focus { border-color: var(--primary); }
 
     .btn-row { display: flex; gap: 8px; align-items: center; }
-    
+
     .btn-action {
       flex: 1;
       height: 42px;
@@ -298,14 +298,14 @@
 
   <header>
     <div class="brand">
-      <span>🕊️ gugu-bot 客服控制台</span>
+      <span id="brandTitle">🕊️ 客服控制台</span>
       <span class="badge-count" id="headerPendingCount" style="display:none;">0</span>
     </div>
     <button class="btn-audio" id="audioToggle" onclick="toggleAudio()">🔔 声音: 开</button>
   </header>
 
   <div class="views-wrapper">
-    
+
     <div class="view-list" id="viewList">
       <div id="sessionsListContainer">
         <div class="empty-list">正在连接服务器...</div>
@@ -351,7 +351,7 @@
         <div class="quick-chip" onclick="fillQuick('哈哈哈哈哈哈，有意思！')">😂 哈哈</div>
         <div class="quick-chip" onclick="fillQuick('你先别急，听我继续给你说：\n')">🗣️ 听我说</div>
         <div class="quick-chip" onclick="fillQuick('稍等一下哈，我手头有点事，马上给你解答！')">⏳ 稍等</div>
-        <div class="quick-chip" onclick="fillQuick('（gugu-bot 正在努力散热降温中...）')">❄️ 散热中</div>
+        <div class="quick-chip" onclick="fillQuick('（正在努力散热降温中...）')">❄️ 散热中</div>
       </div>
 
       <div class="room-footer">
@@ -364,6 +364,7 @@
 
   <script>
     let adminToken = localStorage.getItem('gugu_admin_token') || '';
+    let SITE_NAME = 'AI';
     let activeSessionId = null;
     let activeRequestId = null;
     let sessionsCache = [];
@@ -372,6 +373,13 @@
     let audioEnabled = true;
     let audioCtx = null;
     let promptCollapsed = false;
+
+    fetch('/api/config').then(r => r.json()).then(cfg => {
+      SITE_NAME = cfg.modelName || 'AI';
+      document.title = `${SITE_NAME} 专属工作台`;
+      const brandEl = document.getElementById('brandTitle');
+      if (brandEl) brandEl.textContent = `🕊️ ${SITE_NAME} 客服控制台`;
+    }).catch(() => {});
 
     const avatarColors = [
       'linear-gradient(135deg, #6366f1, #4f46e5)',
@@ -584,7 +592,7 @@
           }
           return `
             <div class="msg-group ${isUser ? 'user' : 'assistant'}">
-              <div class="msg-sender">${isUser ? s.alias : 'gugu-bot (我)'} · ${m.time || ''}</div>
+              <div class="msg-sender">${isUser ? s.alias : SITE_NAME + ' (我)'} · ${m.time || ''}</div>
               <div class="msg-bubble">
                 ${m.content ? m.content.replace(/\n/g, '<br/>') : ''}
                 ${imgsHtml}
