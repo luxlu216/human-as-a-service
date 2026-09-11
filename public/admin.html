@@ -139,6 +139,10 @@
     .tag-waiting { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
     .tag-idle { background: rgba(16, 185, 129, 0.15); color: #34d399; }
 
+    .btn-hide { background: none; border: none; color: #64748b; font-size: 16px; padding: 10px 4px; cursor: pointer; flex-shrink: 0; line-height: 1; }
+    .btn-hide:active { color: var(--danger); }
+    .hidden-footer { padding: 14px 16px 20px; text-align: center; color: var(--text-muted); font-size: 12px; cursor: pointer; }
+
     .view-chat { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg); position: absolute; top:0; left:100%; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10; }
     .view-chat.active { transform: translateX(-100%); }
 
@@ -396,6 +400,24 @@
       return avatarColors[code % avatarColors.length];
     }
 
+    function getHiddenSet() {
+      try { return new Set(JSON.parse(localStorage.getItem('haas_hidden_sessions') || '[]')); } catch (e) { return new Set(); }
+    }
+    function saveHiddenSet(set) {
+      localStorage.setItem('haas_hidden_sessions', JSON.stringify(Array.from(set)));
+    }
+    function hideSession(id) {
+      const h = getHiddenSet();
+      h.add(id);
+      saveHiddenSet(h);
+      if (activeSessionId === id) closeChatRoom();
+      syncSessions();
+    }
+    function restoreAllSessions() {
+      localStorage.removeItem('haas_hidden_sessions');
+      syncSessions();
+    }
+
     async function doLogin() {
       const pwd = document.getElementById('authPwdInput').value.trim();
       if (!pwd) return alert('请输入密码！');
@@ -495,12 +517,28 @@
 
     function renderSessionsList() {
       const container = document.getElementById('sessionsListContainer');
-      if (sessionsCache.length === 0) {
-        container.innerHTML = '<div class="empty-list">目前还没有朋友发来消息哦～<br/><span style="font-size:12px;opacity:0.7;">把接口发给朋友，对方发第一句话时会提醒TA登记姓名！</span></div>';
+
+      const hidden = getHiddenSet();
+      let hiddenChanged = false;
+      for (const s of sessionsCache) {
+        if (s.isPending && hidden.has(s.id)) {
+          hidden.delete(s.id);
+          hiddenChanged = true;
+        }
+      }
+      if (hiddenChanged) saveHiddenSet(hidden);
+
+      const restoreFooter = hidden.size > 0
+        ? `<div class="hidden-footer" onclick="restoreAllSessions()">已隐藏 ${hidden.size} 个对话 · 点击恢复显示</div>`
+        : '';
+
+      const visible = sessionsCache.filter(s => !hidden.has(s.id));
+      if (visible.length === 0) {
+        container.innerHTML = '<div class="empty-list">目前还没有朋友发来消息哦～<br/><span style="font-size:12px;opacity:0.7;">把接口发给朋友，对方发第一句话时会提醒TA登记姓名！</span></div>' + restoreFooter;
         return;
       }
 
-      container.innerHTML = sessionsCache.map(s => {
+      container.innerHTML = visible.map(s => {
         const initial = s.alias.replace(/^我是[:：\s]*/, '').slice(0, 1) || '友';
         const color = getAvatarColor(s.alias);
         return `
@@ -519,8 +557,9 @@
                 ${s.isPending ? '<span class="badge-status-tag tag-waiting">待回复</span>' : '<span class="badge-status-tag tag-idle">就绪</span>'}
               </div>
             </div>
+            ${s.isPending ? '' : `<button class="btn-hide" title="从列表隐藏（仅本机，新消息会自动恢复）" onclick="event.stopPropagation(); hideSession('${s.id}')">✕</button>`}
           </div>`;
-      }).join('');
+      }).join('') + restoreFooter;
     }
 
     async function openChatRoom(sessionId) {
